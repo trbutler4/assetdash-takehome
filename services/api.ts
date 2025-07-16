@@ -10,8 +10,18 @@ const API_BASE_URL = 'https://dev-screener-api.assetdash.com';
 
 export const tokenApi = {
   fetchTokenList: async (): Promise<TokenList> => {
+    // Add timestamp to bypass any caching
+    const timestamp = Date.now();
     const response = await fetch(
-      `${API_BASE_URL}/moby_screener/leaderboard/degen_list?compact=false`
+      `${API_BASE_URL}/moby_screener/leaderboard/degen_list?compact=false&_t=${timestamp}`,
+      {
+        method: 'GET',
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
+      }
     );
     
     if (!response.ok) {

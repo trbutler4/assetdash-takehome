@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import { useTokens } from '@/hooks/useTokens';
 import { usePriceUpdates } from '@/hooks/usePriceUpdates';
@@ -11,6 +11,29 @@ import { sortTokens } from '@/utils/sorting';
 
 export default function HomeScreen() {
   const { data: tokens = [], isLoading, error, refetch, isRefetching } = useTokens();
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  const [updateType, setUpdateType] = useState<'manual' | 'auto' | null>(null);
+  
+  // Handle manual refresh with animation
+  const handleManualRefresh = async () => {
+    setIsManualRefreshing(true);
+    setUpdateType('manual');
+    await refetch();
+    setIsManualRefreshing(false);
+  };
+  
+  // Update timestamp when data changes
+  useEffect(() => {
+    if (tokens.length > 0 && !isLoading) {
+      setLastUpdateTime(new Date());
+      // If not manual refresh, it's an auto update
+      if (!isManualRefreshing && updateType !== 'manual') {
+        setUpdateType('auto');
+      }
+    }
+  }, [tokens, isLoading, isManualRefreshing, updateType]);
+  
   const updatedTokens = usePriceUpdates(tokens);
   const { 
     filters, 
@@ -58,9 +81,16 @@ export default function HomeScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.headerSubtitle}>
-          {processedTokens.length} of {tokens.length} tokens
-        </Text>
+        <View style={styles.headerBottom}>
+          <Text style={styles.headerSubtitle}>
+            {processedTokens.length} of {tokens.length} tokens
+          </Text>
+          {lastUpdateTime && (
+            <Text style={styles.updateTime}>
+              {updateType === 'manual' ? 'Refreshed' : 'Auto-updated'}: {lastUpdateTime.toLocaleTimeString()}
+            </Text>
+          )}
+        </View>
       </View>
       
       {showFilters && (
@@ -81,8 +111,8 @@ export default function HomeScreen() {
       <TokenList
         tokens={processedTokens}
         isLoading={isLoading}
-        isRefreshing={isRefetching}
-        onRefresh={refetch}
+        isRefreshing={isManualRefreshing}
+        onRefresh={handleManualRefresh}
       />
     </SafeAreaView>
   );
@@ -124,9 +154,19 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#007AFF',
   },
+  headerBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   headerSubtitle: {
     fontSize: 14,
     color: '#666',
+  },
+  updateTime: {
+    fontSize: 12,
+    color: '#999',
+    fontStyle: 'italic',
   },
   errorContainer: {
     flex: 1,

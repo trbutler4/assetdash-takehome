@@ -48,7 +48,7 @@ export const TokenList: React.FC<TokenListProps> = ({
     );
   };
 
-  if (isLoading) {
+  if (isLoading && tokens.length === 0) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
@@ -57,20 +57,31 @@ export const TokenList: React.FC<TokenListProps> = ({
   }
 
   return (
-    <FlatList
-      data={tokens}
-      renderItem={renderToken}
-      keyExtractor={(item) => item.token_address}
-      contentContainerStyle={styles.listContainer}
-      ItemSeparatorComponent={() => <View style={styles.separator} />}
-      refreshControl={
-        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
-      }
-    />
+    <View style={styles.container}>
+      <FlatList
+          data={tokens}
+          renderItem={renderToken}
+          keyExtractor={(item) => item.token_address}
+          contentContainerStyle={styles.listContainer}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          refreshControl={
+            <RefreshControl 
+              refreshing={isRefreshing} 
+              onRefresh={onRefresh}
+              tintColor="#007AFF"
+              title="Pull to refresh"
+              titleColor="#007AFF"
+            />
+          }
+        />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
