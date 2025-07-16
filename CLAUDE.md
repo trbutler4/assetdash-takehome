@@ -13,7 +13,6 @@ This project is a takehome assignment for a job. The goal is to meet the require
 # Commands
 
 - `bun run start` - Start the development server
-- `bun run reset-project` - Reset the project to initial state
 - `bun run android` - Start the development server and open Android
 - `bun run ios` - Start the development server and open iOS
 - `bun run web` - Start the development server and open web
