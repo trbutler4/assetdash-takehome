@@ -5,25 +5,53 @@ export const sortTokens = (tokens: Token[], sortOption: SortOption): Token[] => 
 
   switch (sortOption) {
     case 'price_asc':
-      return sortedTokens.sort((a, b) => a.price_usd - b.price_usd);
+      return sortedTokens.sort((a, b) => {
+        if (a.price_usd == null) return 1;
+        if (b.price_usd == null) return -1;
+        return a.price_usd - b.price_usd;
+      });
     
     case 'price_desc':
-      return sortedTokens.sort((a, b) => b.price_usd - a.price_usd);
+      return sortedTokens.sort((a, b) => {
+        if (b.price_usd == null) return 1;
+        if (a.price_usd == null) return -1;
+        return b.price_usd - a.price_usd;
+      });
     
     case 'market_cap_asc':
-      return sortedTokens.sort((a, b) => a.market_cap_usd - b.market_cap_usd);
+      return sortedTokens.sort((a, b) => {
+        if (a.market_cap_usd == null) return 1;
+        if (b.market_cap_usd == null) return -1;
+        return a.market_cap_usd - b.market_cap_usd;
+      });
     
     case 'market_cap_desc':
-      return sortedTokens.sort((a, b) => b.market_cap_usd - a.market_cap_usd);
+      return sortedTokens.sort((a, b) => {
+        if (b.market_cap_usd == null) return 1;
+        if (a.market_cap_usd == null) return -1;
+        return b.market_cap_usd - a.market_cap_usd;
+      });
     
     case 'symbol_asc':
-      return sortedTokens.sort((a, b) => a.token_symbol.localeCompare(b.token_symbol));
+      return sortedTokens.sort((a, b) => {
+        if (!a.token_symbol) return 1;
+        if (!b.token_symbol) return -1;
+        return a.token_symbol.localeCompare(b.token_symbol);
+      });
     
     case 'symbol_desc':
-      return sortedTokens.sort((a, b) => b.token_symbol.localeCompare(a.token_symbol));
+      return sortedTokens.sort((a, b) => {
+        if (!b.token_symbol) return 1;
+        if (!a.token_symbol) return -1;
+        return b.token_symbol.localeCompare(a.token_symbol);
+      });
     
     case 'volume_desc':
-      return sortedTokens.sort((a, b) => b.volume_usd.h24 - a.volume_usd.h24);
+      return sortedTokens.sort((a, b) => {
+        if (!b.volume_usd || b.volume_usd.h24 == null) return 1;
+        if (!a.volume_usd || a.volume_usd.h24 == null) return -1;
+        return b.volume_usd.h24 - a.volume_usd.h24;
+      });
     
     default:
       return sortedTokens;
