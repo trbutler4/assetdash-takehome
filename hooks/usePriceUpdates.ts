@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { Token } from '@/types/token';
 
 const PRICE_UPDATE_INTERVAL = 10000; // 10 seconds
-const MIN_TOKENS_TO_UPDATE = 3;
-const MAX_TOKENS_TO_UPDATE = 8;
+const MIN_TOKENS_TO_UPDATE = 75;
+const MAX_TOKENS_TO_UPDATE = 100;
 const MAX_PRICE_CHANGE_PERCENT = 0.15; // Max 15% price change
 
 export const usePriceUpdates = (initialTokens: Token[]) => {
@@ -58,14 +58,15 @@ export const usePriceUpdates = (initialTokens: Token[]) => {
   const updateRandomTokens = useCallback((tokens: Token[]) => {
     if (tokens.length === 0) return tokens;
 
-    // Determine how many tokens to update
-    const tokensToUpdateCount = Math.floor(
-      Math.random() * (MAX_TOKENS_TO_UPDATE - MIN_TOKENS_TO_UPDATE + 1) + MIN_TOKENS_TO_UPDATE
+    // Determine how many tokens to update (75-100)
+    const tokensToUpdateCount = Math.min(
+      Math.floor(Math.random() * (MAX_TOKENS_TO_UPDATE - MIN_TOKENS_TO_UPDATE + 1) + MIN_TOKENS_TO_UPDATE),
+      tokens.length
     );
 
     // Get random indices to update
     const indicesToUpdate = new Set<number>();
-    while (indicesToUpdate.size < Math.min(tokensToUpdateCount, tokens.length)) {
+    while (indicesToUpdate.size < tokensToUpdateCount) {
       indicesToUpdate.add(Math.floor(Math.random() * tokens.length));
     }
 
