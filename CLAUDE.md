@@ -1,13 +1,23 @@
 
-# About 
+# About
 
-This project is a takehome assignment for a job. The goal is to meet the requirements, in a simple and concise manner, showing production considerations. 
+This project is a takehome assignment for a job. The goal is to meet the requirements, in a simple and concise manner, showing production considerations.
 
-# Stack 
+# Stack
 
 - React Native using Expo go.
 - Basic styling with style params
-- React Query for all fetching and caching. 
+- React Query for all fetching and caching.
+- AsyncStorage for simple persistent state
+
+# Commands
+
+- `bun run start` - Start the development server
+- `bun run reset-project` - Reset the project to initial state
+- `bun run android` - Start the development server and open Android
+- `bun run ios` - Start the development server and open iOS
+- `bun run web` - Start the development server and open web
+- `bun run lint` - Run linting checks
 
 # Requirements
 

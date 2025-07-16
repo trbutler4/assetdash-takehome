@@ -1,0 +1,43 @@
+import { Token, SortOption } from '@/types/token';
+
+export const sortTokens = (tokens: Token[], sortOption: SortOption): Token[] => {
+  const sortedTokens = [...tokens];
+
+  switch (sortOption) {
+    case 'price_asc':
+      return sortedTokens.sort((a, b) => a.price_usd - b.price_usd);
+    
+    case 'price_desc':
+      return sortedTokens.sort((a, b) => b.price_usd - a.price_usd);
+    
+    case 'market_cap_asc':
+      return sortedTokens.sort((a, b) => a.market_cap_usd - b.market_cap_usd);
+    
+    case 'market_cap_desc':
+      return sortedTokens.sort((a, b) => b.market_cap_usd - a.market_cap_usd);
+    
+    case 'symbol_asc':
+      return sortedTokens.sort((a, b) => a.token_symbol.localeCompare(b.token_symbol));
+    
+    case 'symbol_desc':
+      return sortedTokens.sort((a, b) => b.token_symbol.localeCompare(a.token_symbol));
+    
+    case 'volume_desc':
+      return sortedTokens.sort((a, b) => b.volume_usd.h24 - a.volume_usd.h24);
+    
+    default:
+      return sortedTokens;
+  }
+};
+
+export const sortOptions: { value: SortOption; label: string }[] = [
+  { value: 'market_cap_desc', label: 'Market Cap (High to Low)' },
+  { value: 'market_cap_asc', label: 'Market Cap (Low to High)' },
+  { value: 'price_desc', label: 'Price (High to Low)' },
+  { value: 'price_asc', label: 'Price (Low to High)' },
+  { value: 'volume_desc', label: 'Volume (24h)' },
+  { value: 'symbol_asc', label: 'Symbol (A-Z)' },
+  { value: 'symbol_desc', label: 'Symbol (Z-A)' },
+];
+
+export const getDefaultSortOption = (): SortOption => 'market_cap_desc';
