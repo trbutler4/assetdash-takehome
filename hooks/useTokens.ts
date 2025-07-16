@@ -1,15 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
-import { tokenApi } from '@/services/api';
-import { TokenList } from '@/types/token';
+import { useQuery } from "@tanstack/react-query";
+import { tokenApi } from "@/services/api";
+import { TokenList } from "@/types/token";
 
-const QUERY_KEY = ['tokens'] as const;
+const QUERY_KEY = ["tokens"] as const;
 
 export const useTokens = () => {
   return useQuery<TokenList, Error>({
     queryKey: QUERY_KEY,
     queryFn: tokenApi.fetchTokenList,
     staleTime: 0, // Always fetch fresh data
-    gcTime: 1000 * 60 * 10, // Keep in cache for 10 minutes
     refetchInterval: 1000 * 10, // Auto-refetch every 10 seconds
     refetchOnMount: true, // Always fetch on mount
     refetchOnWindowFocus: false, // Don't refetch on focus

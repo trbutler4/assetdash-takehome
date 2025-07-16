@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   FlatList,
   View,
@@ -9,6 +9,7 @@ import {
   Image,
 } from 'react-native';
 import { Token } from '@/types/token';
+import { TokenItem } from './TokenItem';
 
 interface TokenListProps {
   tokens: Token[];
@@ -23,33 +24,17 @@ export const TokenList: React.FC<TokenListProps> = ({
   isRefreshing,
   onRefresh,
 }) => {
-  const renderToken = ({ item }: { item: Token }) => {
-    const priceChange = item.price_change_percent?.h24 ?? 0;
-    const priceChangeColor = priceChange >= 0 ? '#4CAF50' : '#F44336';
-    
-    return (
-      <View style={styles.tokenItem}>
-        <View style={styles.tokenLeft}>
-          <Image source={{ uri: item.token_icon }} style={styles.tokenIcon} />
-          <View style={styles.tokenInfo}>
-            <Text style={styles.tokenSymbol}>{item.token_symbol}</Text>
-            <Text style={styles.tokenPrice}>
-              ${item.price_usd != null ? item.price_usd.toFixed(6) : '0.000000'}
-            </Text>
-          </View>
-        </View>
-        
-        <View style={styles.tokenRight}>
-          <Text style={styles.marketCap}>
-            ${item.market_cap_usd != null ? (item.market_cap_usd / 1000000).toFixed(2) : '0.00'}M
-          </Text>
-          <Text style={[styles.priceChange, { color: priceChangeColor }]}>
-            {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
-          </Text>
-        </View>
-      </View>
-    );
-  };
+  const renderToken = useCallback(({ item }: { item: Token }) => {
+    return <TokenItem item={item} />;
+  }, []);
+
+  const keyExtractor = useCallback((item: Token) => item.token_address, []);
+
+  const getItemLayout = useCallback((data: Token[] | null | undefined, index: number) => ({
+    length: 73, // height of item + separator
+    offset: 73 * index,
+    index,
+  }), []);
 
   if (isLoading && tokens.length === 0) {
     return (
@@ -62,21 +47,27 @@ export const TokenList: React.FC<TokenListProps> = ({
   return (
     <View style={styles.container}>
       <FlatList
-          data={tokens}
-          renderItem={renderToken}
-          keyExtractor={(item) => item.token_address}
-          contentContainerStyle={styles.listContainer}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          refreshControl={
-            <RefreshControl 
-              refreshing={isRefreshing} 
-              onRefresh={onRefresh}
-              tintColor="#007AFF"
-              title="Pull to refresh"
-              titleColor="#007AFF"
-            />
-          }
-        />
+        data={tokens}
+        renderItem={renderToken}
+        keyExtractor={keyExtractor}
+        contentContainerStyle={styles.listContainer}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={onRefresh}
+            tintColor="#007AFF"
+            title="Pull to refresh"
+            titleColor="#007AFF"
+          />
+        }
+        getItemLayout={getItemLayout}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        initialNumToRender={15}
+        updateCellsBatchingPeriod={50}
+      />
     </View>
   );
 };
@@ -93,49 +84,7 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingVertical: 8,
   },
-  tokenItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-  },
-  tokenLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  tokenIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-  },
-  tokenInfo: {
-    flex: 1,
-  },
-  tokenSymbol: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  tokenPrice: {
-    fontSize: 14,
-    color: '#666',
-  },
-  tokenRight: {
-    alignItems: 'flex-end',
-  },
-  marketCap: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  priceChange: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
+
   separator: {
     height: 1,
     backgroundColor: '#E0E0E0',

@@ -63,21 +63,22 @@ export const usePriceUpdates = (initialTokens: Token[]) => {
       Math.random() * (MAX_TOKENS_TO_UPDATE - MIN_TOKENS_TO_UPDATE + 1) + MIN_TOKENS_TO_UPDATE
     );
 
-    // Create a copy of the tokens array
-    const newTokens = [...tokens];
-
     // Get random indices to update
     const indicesToUpdate = new Set<number>();
     while (indicesToUpdate.size < Math.min(tokensToUpdateCount, tokens.length)) {
       indicesToUpdate.add(Math.floor(Math.random() * tokens.length));
     }
 
-    // Update the selected tokens
-    indicesToUpdate.forEach((index) => {
-      newTokens[index] = updateTokenPrice(newTokens[index]);
-    });
+    // Only create new array if we have tokens to update
+    if (indicesToUpdate.size === 0) return tokens;
 
-    return newTokens;
+    // Create new array with minimal changes
+    return tokens.map((token, index) => {
+      if (indicesToUpdate.has(index)) {
+        return updateTokenPrice(token);
+      }
+      return token; // Keep reference to unchanged token
+    });
   }, []);
 
   // Initialize tokens when they change
@@ -91,14 +92,18 @@ export const usePriceUpdates = (initialTokens: Token[]) => {
         intervalRef.current = null;
       }
     }
-  }, [initialTokens.length]);
+  }, [initialTokens]);
 
   // Set up the interval for price updates
   useEffect(() => {
     // Only start interval if we have tokens and haven't started one already
     if (updatedTokens.length > 0 && !intervalRef.current) {
       const updatePrices = () => {
-        setUpdatedTokens(currentTokens => updateRandomTokens(currentTokens));
+        setUpdatedTokens(currentTokens => {
+          const newTokens = updateRandomTokens(currentTokens);
+          // Only update state if tokens actually changed
+          return newTokens === currentTokens ? currentTokens : newTokens;
+        });
       };
 
       // Start the interval
