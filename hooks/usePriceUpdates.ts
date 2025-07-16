@@ -16,30 +16,35 @@ export const usePriceUpdates = (initialTokens: Token[]) => {
   };
 
   const updateTokenPrice = (token: Token): Token => {
+    // Skip tokens with null prices
+    if (token.price_usd == null) {
+      return token;
+    }
+
     const priceChangePercent = generateRandomPriceChange();
     const newPrice = token.price_usd * (1 + priceChangePercent);
-    const newMarketCap = newPrice * token.total_supply;
+    const newMarketCap = token.total_supply != null ? newPrice * token.total_supply : token.market_cap_usd;
 
     // Update price change percentages (simulate realistic changes)
-    const updatedPriceChangePercent = {
+    const updatedPriceChangePercent = token.price_change_percent ? {
       m5: priceChangePercent * 100,
-      m30: token.price_change_percent.m30 * 0.9 + priceChangePercent * 10,
-      h1: token.price_change_percent.h1 * 0.8 + priceChangePercent * 5,
-      h4: token.price_change_percent.h4 * 0.7 + priceChangePercent * 2,
-      h8: token.price_change_percent.h8 * 0.6 + priceChangePercent * 1,
-      h24: token.price_change_percent.h24 * 0.5 + priceChangePercent * 0.5,
-    };
+      m30: (token.price_change_percent.m30 ?? 0) * 0.9 + priceChangePercent * 10,
+      h1: (token.price_change_percent.h1 ?? 0) * 0.8 + priceChangePercent * 5,
+      h4: (token.price_change_percent.h4 ?? 0) * 0.7 + priceChangePercent * 2,
+      h8: (token.price_change_percent.h8 ?? 0) * 0.6 + priceChangePercent * 1,
+      h24: (token.price_change_percent.h24 ?? 0) * 0.5 + priceChangePercent * 0.5,
+    } : token.price_change_percent;
 
     // Simulate volume changes
     const volumeMultiplier = 1 + Math.random() * 0.3;
-    const updatedVolume = {
-      m5: token.volume_usd.m5 * volumeMultiplier,
-      m30: token.volume_usd.m30 * (0.9 + Math.random() * 0.2),
-      h1: token.volume_usd.h1 * (0.95 + Math.random() * 0.1),
-      h4: token.volume_usd.h4 * (0.98 + Math.random() * 0.04),
-      h8: token.volume_usd.h8 * (0.99 + Math.random() * 0.02),
-      h24: token.volume_usd.h24 * (0.995 + Math.random() * 0.01),
-    };
+    const updatedVolume = token.volume_usd ? {
+      m5: (token.volume_usd.m5 ?? 0) * volumeMultiplier,
+      m30: (token.volume_usd.m30 ?? 0) * (0.9 + Math.random() * 0.2),
+      h1: (token.volume_usd.h1 ?? 0) * (0.95 + Math.random() * 0.1),
+      h4: (token.volume_usd.h4 ?? 0) * (0.98 + Math.random() * 0.04),
+      h8: (token.volume_usd.h8 ?? 0) * (0.99 + Math.random() * 0.02),
+      h24: (token.volume_usd.h24 ?? 0) * (0.995 + Math.random() * 0.01),
+    } : token.volume_usd;
 
     return {
       ...token,

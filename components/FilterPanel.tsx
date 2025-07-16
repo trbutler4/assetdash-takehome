@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Keyboard,
 } from 'react-native';
 import { FilterState } from '@/types/token';
 
@@ -25,9 +26,39 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   onResetFilters,
   activeFilterCount,
 }) => {
+  const [priceInputValue, setPriceInputValue] = React.useState(filters.price_threshold.toString());
+  const [isInputFocused, setIsInputFocused] = React.useState(false);
+
+  React.useEffect(() => {
+    // Only update the input value from filters when not focused
+    if (!isInputFocused) {
+      setPriceInputValue(filters.price_threshold.toString());
+    }
+  }, [filters.price_threshold, isInputFocused]);
+
   const handlePriceThresholdChange = (text: string) => {
+    // Allow typing decimal points and numbers
+    setPriceInputValue(text);
+    
+    // Update the actual filter only if it's a valid number
     const value = parseFloat(text);
     if (!isNaN(value) && value >= 0) {
+      onUpdatePriceThreshold(value);
+    }
+  };
+
+  const handlePriceThresholdFocus = () => {
+    setIsInputFocused(true);
+  };
+
+  const handlePriceThresholdBlur = () => {
+    setIsInputFocused(false);
+    // On blur, ensure we have a valid number
+    const value = parseFloat(priceInputValue);
+    if (isNaN(value) || value < 0) {
+      setPriceInputValue(filters.price_threshold.toString());
+    } else {
+      // Update the filter with the final value
       onUpdatePriceThreshold(value);
     }
   };
@@ -92,13 +123,25 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         {filters.price_above_threshold && (
           <View style={styles.thresholdInputContainer}>
             <Text style={styles.thresholdInputLabel}>Price Threshold ($)</Text>
-            <TextInput
-              style={styles.thresholdInput}
-              value={filters.price_threshold.toString()}
-              onChangeText={handlePriceThresholdChange}
-              keyboardType="decimal-pad"
-              placeholder="0.01"
-            />
+            <View style={styles.thresholdInputRow}>
+              <TextInput
+                style={styles.thresholdInput}
+                value={priceInputValue}
+                onChangeText={handlePriceThresholdChange}
+                onFocus={handlePriceThresholdFocus}
+                onBlur={handlePriceThresholdBlur}
+                keyboardType="numeric"
+                placeholder="0.01"
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+              />
+              <TouchableOpacity 
+                style={styles.doneButton} 
+                onPress={Keyboard.dismiss}
+              >
+                <Text style={styles.doneButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </ScrollView>
@@ -170,7 +213,12 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 8,
   },
+  thresholdInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   thresholdInput: {
+    flex: 1,
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#E0E0E0',
@@ -178,5 +226,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 16,
+    marginRight: 8,
+  },
+  doneButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  doneButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

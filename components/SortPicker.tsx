@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Modal,
   FlatList,
   SafeAreaView,
+  Animated,
 } from 'react-native';
 import { SortOption } from '@/types/token';
 import { sortOptions } from '@/utils/sorting';
@@ -21,8 +22,42 @@ export const SortPicker: React.FC<SortPickerProps> = ({
   onSortChange,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const contentTranslateY = useRef(new Animated.Value(300)).current;
 
   const currentSortLabel = sortOptions.find(opt => opt.value === currentSort)?.label || 'Sort';
+
+  useEffect(() => {
+    if (modalVisible) {
+      // Animate in
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(contentTranslateY, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      // Animate out
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(contentTranslateY, {
+          toValue: 300,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [modalVisible]);
 
   const handleSortSelect = (sortOption: SortOption) => {
     onSortChange(sortOption);
@@ -40,17 +75,33 @@ export const SortPicker: React.FC<SortPickerProps> = ({
       </TouchableOpacity>
 
       <Modal
-        animationType="slide"
+        animationType="none"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setModalVisible(false)}
+        <Animated.View 
+          style={[
+            styles.modalOverlay,
+            {
+              opacity: overlayOpacity,
+            }
+          ]}
         >
-          <SafeAreaView style={styles.modalContent}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFillObject}
+            activeOpacity={1}
+            onPress={() => setModalVisible(false)}
+          />
+          <Animated.View 
+            style={[
+              styles.modalContent,
+              {
+                transform: [{ translateY: contentTranslateY }],
+              }
+            ]}
+          >
+            <SafeAreaView>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Sort By</Text>
               <TouchableOpacity
@@ -87,8 +138,9 @@ export const SortPicker: React.FC<SortPickerProps> = ({
               )}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
             />
-          </SafeAreaView>
-        </TouchableOpacity>
+            </SafeAreaView>
+          </Animated.View>
+        </Animated.View>
       </Modal>
     </>
   );
@@ -124,6 +176,10 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '70%',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   modalHeader: {
     flexDirection: 'row',

@@ -24,7 +24,8 @@ export const TokenList: React.FC<TokenListProps> = ({
   onRefresh,
 }) => {
   const renderToken = ({ item }: { item: Token }) => {
-    const priceChangeColor = item.price_change_percent.h24 >= 0 ? '#4CAF50' : '#F44336';
+    const priceChange = item.price_change_percent?.h24 ?? 0;
+    const priceChangeColor = priceChange >= 0 ? '#4CAF50' : '#F44336';
     
     return (
       <View style={styles.tokenItem}>
@@ -32,16 +33,18 @@ export const TokenList: React.FC<TokenListProps> = ({
           <Image source={{ uri: item.token_icon }} style={styles.tokenIcon} />
           <View style={styles.tokenInfo}>
             <Text style={styles.tokenSymbol}>{item.token_symbol}</Text>
-            <Text style={styles.tokenPrice}>${item.price_usd.toFixed(6)}</Text>
+            <Text style={styles.tokenPrice}>
+              ${item.price_usd != null ? item.price_usd.toFixed(6) : '0.000000'}
+            </Text>
           </View>
         </View>
         
         <View style={styles.tokenRight}>
           <Text style={styles.marketCap}>
-            ${(item.market_cap_usd / 1000000).toFixed(2)}M
+            ${item.market_cap_usd != null ? (item.market_cap_usd / 1000000).toFixed(2) : '0.00'}M
           </Text>
           <Text style={[styles.priceChange, { color: priceChangeColor }]}>
-            {item.price_change_percent.h24 >= 0 ? '+' : ''}{item.price_change_percent.h24.toFixed(2)}%
+            {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
           </Text>
         </View>
       </View>

@@ -56,8 +56,13 @@ export const useFilters = () => {
   }, []);
 
   // Apply filters to token list
-  const applyFilters = useCallback((tokens: Token[]) => {
+  const applyFilters = useCallback((tokens: Token[]): Token[] => {
     return tokens.filter((token) => {
+      // Skip tokens with null prices to avoid errors
+      if (token.price_usd == null) {
+        return false;
+      }
+
       // Apply is_new filter
       if (filters.is_new && !token.is_new) {
         return false;
