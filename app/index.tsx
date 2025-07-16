@@ -4,7 +4,6 @@ import { useTokens } from '@/hooks/useTokens';
 import { usePriceUpdates } from '@/hooks/usePriceUpdates';
 import { useFilters } from '@/hooks/useFilters';
 import { useSort } from '@/hooks/useSort';
-import { usePaginatedTokens } from '@/hooks/usePaginatedTokens';
 import { TokenList } from '@/components/TokenList';
 import { FilterPanel } from '@/components/FilterPanel';
 import { SortPicker } from '@/components/SortPicker';
@@ -53,16 +52,6 @@ export default function HomeScreen() {
     return sortTokens(filteredTokens, sortOption);
   }, [updatedTokens, applyFilters, sortOption]);
 
-  // Paginate the processed tokens
-  const {
-    paginatedTokens,
-    loadMore,
-    hasMore,
-    isLoadingMore,
-    totalCount,
-    displayedCount,
-  } = usePaginatedTokens(processedTokens);
-
   if (error) {
     return (
       <SafeAreaView style={styles.container}>
@@ -94,7 +83,7 @@ export default function HomeScreen() {
         </View>
         <View style={styles.headerBottom}>
           <Text style={styles.headerSubtitle}>
-            Showing {displayedCount} of {totalCount} ({tokens.length} total)
+            {processedTokens.length} of {tokens.length} tokens
           </Text>
           {lastUpdateTime && (
             <Text style={styles.updateTime}>
@@ -120,14 +109,10 @@ export default function HomeScreen() {
       />
       
       <TokenList
-        tokens={paginatedTokens}
+        tokens={processedTokens}
         isLoading={isLoading}
         isRefreshing={isManualRefreshing}
         onRefresh={handleManualRefresh}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        hasMore={hasMore}
-        isLoadingMore={isLoadingMore}
       />
     </SafeAreaView>
   );

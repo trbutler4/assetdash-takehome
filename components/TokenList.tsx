@@ -16,10 +16,6 @@ interface TokenListProps {
   isLoading: boolean;
   isRefreshing: boolean;
   onRefresh: () => void;
-  onEndReached?: () => void;
-  onEndReachedThreshold?: number;
-  hasMore?: boolean;
-  isLoadingMore?: boolean;
 }
 
 export const TokenList: React.FC<TokenListProps> = ({
@@ -27,10 +23,6 @@ export const TokenList: React.FC<TokenListProps> = ({
   isLoading,
   isRefreshing,
   onRefresh,
-  onEndReached,
-  onEndReachedThreshold = 0.5,
-  hasMore = false,
-  isLoadingMore = false,
 }) => {
   const renderToken = useCallback(({ item }: { item: Token }) => {
     return <TokenItem item={item} />;
@@ -38,16 +30,11 @@ export const TokenList: React.FC<TokenListProps> = ({
 
   const keyExtractor = useCallback((item: Token) => item.token_address, []);
 
-  const renderFooter = useCallback(() => {
-    if (!isLoadingMore) return null;
-    
-    return (
-      <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color="#007AFF" />
-        <Text style={styles.footerText}>Loading more...</Text>
-      </View>
-    );
-  }, [isLoadingMore]);
+  const getItemLayout = useCallback((data: Token[] | null | undefined, index: number) => ({
+    length: 73, // height of item + separator
+    offset: 73 * index,
+    index,
+  }), []);
 
   if (isLoading && tokens.length === 0) {
     return (
@@ -74,14 +61,12 @@ export const TokenList: React.FC<TokenListProps> = ({
             titleColor="#007AFF"
           />
         }
+        getItemLayout={getItemLayout}
         removeClippedSubviews={true}
         maxToRenderPerBatch={10}
         windowSize={10}
         initialNumToRender={15}
         updateCellsBatchingPeriod={50}
-        onEndReached={onEndReached}
-        onEndReachedThreshold={onEndReachedThreshold}
-        ListFooterComponent={renderFooter}
       />
     </View>
   );
@@ -104,16 +89,5 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#E0E0E0',
     marginHorizontal: 16,
-  },
-  footerLoader: {
-    paddingVertical: 20,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  footerText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#666',
   },
 });
