@@ -3,9 +3,9 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
 } from 'react-native';
 import { Token } from '@/types/token';
+import { TokenIcon } from './TokenIcon';
 
 interface TokenItemProps {
   item: Token;
@@ -18,9 +18,9 @@ export const TokenItem = React.memo<TokenItemProps>(({ item }) => {
   return (
     <View style={styles.tokenItem}>
       <View style={styles.tokenLeft}>
-        <Image source={{ uri: item.token_icon }} style={styles.tokenIcon} />
+        <TokenIcon iconUrl={item.token_icon} />
         <View style={styles.tokenInfo}>
-          <Text style={styles.tokenSymbol}>{item.token_symbol}</Text>
+          <Text style={styles.tokenSymbol}>{item.token_symbol || 'UNKNOWN'}</Text>
           <Text style={styles.tokenPrice}>
             ${item.price_usd != null ? item.price_usd.toFixed(6) : '0.000000'}
           </Text>
@@ -40,6 +40,7 @@ export const TokenItem = React.memo<TokenItemProps>(({ item }) => {
 }, (prevProps, nextProps) => {
   // Custom comparison function for better performance
   // Only re-render if these specific fields change
+  // Note: imageError is internal state and doesn't affect this comparison
   return (
     prevProps.item.token_address === nextProps.item.token_address &&
     prevProps.item.price_usd === nextProps.item.price_usd &&
@@ -66,12 +67,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  tokenIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-  },
+
   tokenInfo: {
     flex: 1,
   },
