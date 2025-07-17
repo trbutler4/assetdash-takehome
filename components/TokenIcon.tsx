@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,12 @@ interface TokenIconProps {
   iconUrl?: string | null;
 }
 
-export const TokenIcon: React.FC<TokenIconProps> = ({ iconUrl }) => {
+const TokenIconComponent: React.FC<TokenIconProps> = ({ iconUrl }) => {
   const [hasError, setHasError] = useState(false);
+  
+  const handleError = useCallback(() => {
+    setHasError(true);
+  }, []);
   
   if (!iconUrl || hasError) {
     return (
@@ -25,10 +29,16 @@ export const TokenIcon: React.FC<TokenIconProps> = ({ iconUrl }) => {
     <Image 
       source={{ uri: iconUrl }} 
       style={styles.tokenIcon}
-      onError={() => setHasError(true)}
+      onError={handleError}
     />
   );
 };
+
+export const TokenIcon = React.memo(TokenIconComponent, (prevProps, nextProps) => {
+  return prevProps.iconUrl === nextProps.iconUrl;
+});
+
+TokenIcon.displayName = 'TokenIcon';
 
 const styles = StyleSheet.create({
   tokenIcon: {

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -42,16 +42,9 @@ const formatPercentage = (percentage: number): string => {
  * Displays token symbol, price, market cap, and 24h price change
  */
 export const TokenItem = React.memo<TokenItemProps>(({ item }) => {
-  // Memoize calculated values
-  const { priceChangeColor, formattedPrice, formattedMarketCap, formattedPercentage } = useMemo(() => {
-    const change = item.price_change_percent?.h24 ?? 0;
-    return {
-      priceChangeColor: change >= 0 ? UI_CONFIG.COLORS.POSITIVE : UI_CONFIG.COLORS.NEGATIVE,
-      formattedPrice: formatPrice(item.price_usd),
-      formattedMarketCap: formatMarketCap(item.market_cap_usd),
-      formattedPercentage: formatPercentage(change),
-    };
-  }, [item.price_usd, item.market_cap_usd, item.price_change_percent?.h24]);
+  // Calculate values directly - React.memo handles memoization
+  const priceChange = item.price_change_percent?.h24 ?? 0;
+  const priceChangeColor = priceChange >= 0 ? UI_CONFIG.COLORS.POSITIVE : UI_CONFIG.COLORS.NEGATIVE;
   
   return (
     <View style={styles.tokenItem}>
@@ -60,35 +53,39 @@ export const TokenItem = React.memo<TokenItemProps>(({ item }) => {
         <View style={styles.tokenInfo}>
           <Text style={styles.tokenSymbol}>{item.token_symbol || 'UNKNOWN'}</Text>
           <Text style={styles.tokenPrice}>
-            ${formattedPrice}
+            ${formatPrice(item.price_usd)}
           </Text>
         </View>
       </View>
       
       <View style={styles.tokenRight}>
         <Text style={styles.marketCap}>
-          ${formattedMarketCap}
+          ${formatMarketCap(item.market_cap_usd)}
         </Text>
         <Text style={[styles.priceChange, { color: priceChangeColor }]}>
-          {formattedPercentage}
+          {formatPercentage(priceChange)}
         </Text>
       </View>
     </View>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison function for better performance
-  // Only re-render if these specific fields change
+  // Optimized comparison - only check fields that affect visual display
   const prev = prevProps.item;
   const next = nextProps.item;
   
-  return (
-    prev.token_address === next.token_address &&
-    prev.price_usd === next.price_usd &&
-    prev.market_cap_usd === next.market_cap_usd &&
-    prev.price_change_percent?.h24 === next.price_change_percent?.h24 &&
-    prev.token_symbol === next.token_symbol &&
-    prev.token_icon === next.token_icon
-  );
+  if (prev.token_address !== next.token_address) return false;
+  if (prev.token_symbol !== next.token_symbol) return false;
+  if (prev.token_icon !== next.token_icon) return false;
+  
+  // For numeric values, use a small threshold to prevent unnecessary re-renders
+  const priceThreshold = 0.000001;
+  if (Math.abs((prev.price_usd ?? 0) - (next.price_usd ?? 0)) > priceThreshold) return false;
+  if (Math.abs((prev.market_cap_usd ?? 0) - (next.market_cap_usd ?? 0)) > priceThreshold) return false;
+  
+  const changeThreshold = 0.01;
+  if (Math.abs((prev.price_change_percent?.h24 ?? 0) - (next.price_change_percent?.h24 ?? 0)) > changeThreshold) return false;
+  
+  return true;
 });
 
 TokenItem.displayName = 'TokenItem';

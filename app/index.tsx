@@ -111,6 +111,9 @@ export default function HomeScreen() {
     activeFilterCount 
   } = useFilters();
   const { sortOption, updateSortOption } = useSort();
+  
+  // Memoize active filter count to prevent recalculation
+  const filterCount = useMemo(() => activeFilterCount(), [filters]);
 
   /**
    * Handle manual refresh action
@@ -148,7 +151,7 @@ export default function HomeScreen() {
   const processedTokens = useMemo(() => {
     const filteredTokens = applyFilters(updatedTokens);
     return sortTokens(filteredTokens, sortOption);
-  }, [updatedTokens, applyFilters, sortOption]);
+  }, [updatedTokens, filters, sortOption]); // Use filters directly instead of applyFilters callback
 
   // Handle error state
 
@@ -169,7 +172,7 @@ export default function HomeScreen() {
         lastUpdateTime={lastUpdateTime}
         updateType={updateType}
         showFilters={showFilters}
-        activeFilterCount={activeFilterCount()}
+        activeFilterCount={filterCount}
         onToggleFilters={toggleFilterPanel}
       />
       
@@ -179,7 +182,7 @@ export default function HomeScreen() {
           onToggleFilter={toggleFilter}
           onUpdatePriceThreshold={updatePriceThreshold}
           onResetFilters={resetFilters}
-          activeFilterCount={activeFilterCount()}
+          activeFilterCount={filterCount}
         />
       )}
       

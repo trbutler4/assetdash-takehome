@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   FlatList,
   View,
@@ -11,6 +11,11 @@ import {
 import { Token } from '@/types/token';
 import { TokenItem } from './TokenItem';
 import { UI_CONFIG } from '@/constants/app';
+
+/**
+ * Static separator component to prevent unnecessary re-renders
+ */
+const ItemSeparator = () => <View style={styles.separator} />;
 
 interface TokenListProps {
   tokens: Token[];
@@ -34,6 +39,11 @@ export const TokenList: React.FC<TokenListProps> = ({
   isRefreshing,
   onRefresh,
 }) => {
+  // Create extraData to control when FlatList re-renders
+  const extraData = useMemo(() => {
+    // Only re-render list when number of tokens changes or refresh state changes
+    return `${tokens.length}-${isRefreshing}`;
+  }, [tokens.length, isRefreshing]);
   /**
    * Render individual token item
    */
@@ -58,10 +68,7 @@ export const TokenList: React.FC<TokenListProps> = ({
     []
   );
 
-  /**
-   * Render separator between items
-   */
-  const renderSeparator = useCallback(() => <View style={styles.separator} />, []);
+  // Separator is defined outside as a static component
 
   /**
    * Render empty state when no tokens
@@ -95,11 +102,12 @@ export const TokenList: React.FC<TokenListProps> = ({
         data={tokens}
         renderItem={renderToken}
         keyExtractor={keyExtractor}
+        extraData={extraData}
         contentContainerStyle={[
           styles.listContainer,
           tokens.length === 0 && styles.emptyListContainer,
         ]}
-        ItemSeparatorComponent={renderSeparator}
+        ItemSeparatorComponent={ItemSeparator}
         ListEmptyComponent={renderEmptyComponent}
         refreshControl={
           <RefreshControl 
@@ -116,14 +124,12 @@ export const TokenList: React.FC<TokenListProps> = ({
         windowSize={UI_CONFIG.LIST.WINDOW_SIZE}
         initialNumToRender={UI_CONFIG.LIST.INITIAL_NUM_TO_RENDER}
         updateCellsBatchingPeriod={UI_CONFIG.LIST.UPDATE_CELL_BATCH_SIZE}
-        maintainVisibleContentPosition={{
-          minIndexForVisible: 0,
-        }}
       />
     </View>
   );
 };
 
+// Define styles outside component to prevent recreation
 const styles = StyleSheet.create({
   container: {
     flex: 1,
