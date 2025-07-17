@@ -1,9 +1,9 @@
-import { useEffect, useState, useCallback, useRef } from "react";
-import { Token } from "@/types/token";
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { Token } from '@/types/token';
 
 const PRICE_UPDATE_INTERVAL = 10000; // 10 seconds
-const MIN_TOKENS_TO_UPDATE = 150;
-const MAX_TOKENS_TO_UPDATE = 200;
+const MIN_TOKENS_TO_UPDATE = 75;
+const MAX_TOKENS_TO_UPDATE = 100;
 const MAX_PRICE_CHANGE_PERCENT = 0.15; // Max 15% price change
 
 export const usePriceUpdates = (initialTokens: Token[]) => {
@@ -23,42 +23,28 @@ export const usePriceUpdates = (initialTokens: Token[]) => {
 
     const priceChangePercent = generateRandomPriceChange();
     const newPrice = token.price_usd * (1 + priceChangePercent);
-    const newMarketCap =
-      token.total_supply != null
-        ? newPrice * token.total_supply
-        : token.market_cap_usd;
+    const newMarketCap = token.total_supply != null ? newPrice * token.total_supply : token.market_cap_usd;
 
     // Update price change percentages (simulate realistic changes)
-    const updatedPriceChangePercent = token.price_change_percent
-      ? {
-          m5: priceChangePercent * 100,
-          m30:
-            (token.price_change_percent.m30 ?? 0) * 0.9 +
-            priceChangePercent * 10,
-          h1:
-            (token.price_change_percent.h1 ?? 0) * 0.8 + priceChangePercent * 5,
-          h4:
-            (token.price_change_percent.h4 ?? 0) * 0.7 + priceChangePercent * 2,
-          h8:
-            (token.price_change_percent.h8 ?? 0) * 0.6 + priceChangePercent * 1,
-          h24:
-            (token.price_change_percent.h24 ?? 0) * 0.5 +
-            priceChangePercent * 0.5,
-        }
-      : token.price_change_percent;
+    const updatedPriceChangePercent = token.price_change_percent ? {
+      m5: priceChangePercent * 100,
+      m30: (token.price_change_percent.m30 ?? 0) * 0.9 + priceChangePercent * 10,
+      h1: (token.price_change_percent.h1 ?? 0) * 0.8 + priceChangePercent * 5,
+      h4: (token.price_change_percent.h4 ?? 0) * 0.7 + priceChangePercent * 2,
+      h8: (token.price_change_percent.h8 ?? 0) * 0.6 + priceChangePercent * 1,
+      h24: (token.price_change_percent.h24 ?? 0) * 0.5 + priceChangePercent * 0.5,
+    } : token.price_change_percent;
 
     // Simulate volume changes
     const volumeMultiplier = 1 + Math.random() * 0.3;
-    const updatedVolume = token.volume_usd
-      ? {
-          m5: (token.volume_usd.m5 ?? 0) * volumeMultiplier,
-          m30: (token.volume_usd.m30 ?? 0) * (0.9 + Math.random() * 0.2),
-          h1: (token.volume_usd.h1 ?? 0) * (0.95 + Math.random() * 0.1),
-          h4: (token.volume_usd.h4 ?? 0) * (0.98 + Math.random() * 0.04),
-          h8: (token.volume_usd.h8 ?? 0) * (0.99 + Math.random() * 0.02),
-          h24: (token.volume_usd.h24 ?? 0) * (0.995 + Math.random() * 0.01),
-        }
-      : token.volume_usd;
+    const updatedVolume = token.volume_usd ? {
+      m5: (token.volume_usd.m5 ?? 0) * volumeMultiplier,
+      m30: (token.volume_usd.m30 ?? 0) * (0.9 + Math.random() * 0.2),
+      h1: (token.volume_usd.h1 ?? 0) * (0.95 + Math.random() * 0.1),
+      h4: (token.volume_usd.h4 ?? 0) * (0.98 + Math.random() * 0.04),
+      h8: (token.volume_usd.h8 ?? 0) * (0.99 + Math.random() * 0.02),
+      h24: (token.volume_usd.h24 ?? 0) * (0.995 + Math.random() * 0.01),
+    } : token.volume_usd;
 
     return {
       ...token,
@@ -74,11 +60,8 @@ export const usePriceUpdates = (initialTokens: Token[]) => {
 
     // Determine how many tokens to update (75-100)
     const tokensToUpdateCount = Math.min(
-      Math.floor(
-        Math.random() * (MAX_TOKENS_TO_UPDATE - MIN_TOKENS_TO_UPDATE + 1) +
-          MIN_TOKENS_TO_UPDATE,
-      ),
-      tokens.length,
+      Math.floor(Math.random() * (MAX_TOKENS_TO_UPDATE - MIN_TOKENS_TO_UPDATE + 1) + MIN_TOKENS_TO_UPDATE),
+      tokens.length
     );
 
     // Get random indices to update
@@ -103,7 +86,7 @@ export const usePriceUpdates = (initialTokens: Token[]) => {
   useEffect(() => {
     if (initialTokens.length > 0) {
       setUpdatedTokens(initialTokens);
-
+      
       // Reset the interval to start fresh with new data
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -117,7 +100,7 @@ export const usePriceUpdates = (initialTokens: Token[]) => {
     // Only start interval if we have tokens and haven't started one already
     if (updatedTokens.length > 0 && !intervalRef.current) {
       const updatePrices = () => {
-        setUpdatedTokens((currentTokens) => {
+        setUpdatedTokens(currentTokens => {
           const newTokens = updateRandomTokens(currentTokens);
           // Only update state if tokens actually changed
           return newTokens === currentTokens ? currentTokens : newTokens;
