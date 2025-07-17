@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,52 @@ import {
 } from 'react-native';
 import { Token } from '@/types/token';
 import { TokenIcon } from './TokenIcon';
+import { UI_CONFIG, FORMAT_CONFIG } from '@/constants/app';
 
 interface TokenItemProps {
   item: Token;
 }
 
+/**
+ * Formats a price value with the configured decimal places
+ */
+const formatPrice = (price: number | null): string => {
+  if (price == null) return `0.${'0'.repeat(FORMAT_CONFIG.PRICE.DECIMAL_PLACES)}`;
+  return price.toFixed(FORMAT_CONFIG.PRICE.DECIMAL_PLACES);
+};
+
+/**
+ * Formats market cap in millions with the configured decimal places
+ */
+const formatMarketCap = (marketCap: number | null): string => {
+  if (marketCap == null) return '0.00M';
+  const millions = marketCap / FORMAT_CONFIG.MARKET_CAP.DIVISOR;
+  return `${millions.toFixed(FORMAT_CONFIG.MARKET_CAP.DECIMAL_PLACES)}M`;
+};
+
+/**
+ * Formats percentage change with proper sign and decimal places
+ */
+const formatPercentage = (percentage: number): string => {
+  const formatted = percentage.toFixed(FORMAT_CONFIG.PERCENTAGE.DECIMAL_PLACES);
+  return percentage >= 0 ? `+${formatted}%` : `${formatted}%`;
+};
+
+/**
+ * Individual token list item component
+ * Displays token symbol, price, market cap, and 24h price change
+ */
 export const TokenItem = React.memo<TokenItemProps>(({ item }) => {
-  const priceChange = item.price_change_percent?.h24 ?? 0;
-  const priceChangeColor = priceChange >= 0 ? '#4CAF50' : '#F44336';
+  // Memoize calculated values
+  const { priceChangeColor, formattedPrice, formattedMarketCap, formattedPercentage } = useMemo(() => {
+    const change = item.price_change_percent?.h24 ?? 0;
+    return {
+      priceChangeColor: change >= 0 ? UI_CONFIG.COLORS.POSITIVE : UI_CONFIG.COLORS.NEGATIVE,
+      formattedPrice: formatPrice(item.price_usd),
+      formattedMarketCap: formatMarketCap(item.market_cap_usd),
+      formattedPercentage: formatPercentage(change),
+    };
+  }, [item.price_usd, item.market_cap_usd, item.price_change_percent?.h24]);
   
   return (
     <View style={styles.tokenItem}>
@@ -22,17 +60,17 @@ export const TokenItem = React.memo<TokenItemProps>(({ item }) => {
         <View style={styles.tokenInfo}>
           <Text style={styles.tokenSymbol}>{item.token_symbol || 'UNKNOWN'}</Text>
           <Text style={styles.tokenPrice}>
-            ${item.price_usd != null ? item.price_usd.toFixed(6) : '0.000000'}
+            ${formattedPrice}
           </Text>
         </View>
       </View>
       
       <View style={styles.tokenRight}>
         <Text style={styles.marketCap}>
-          ${item.market_cap_usd != null ? (item.market_cap_usd / 1000000).toFixed(2) : '0.00'}M
+          ${formattedMarketCap}
         </Text>
         <Text style={[styles.priceChange, { color: priceChangeColor }]}>
-          {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
+          {formattedPercentage}
         </Text>
       </View>
     </View>
@@ -40,14 +78,16 @@ export const TokenItem = React.memo<TokenItemProps>(({ item }) => {
 }, (prevProps, nextProps) => {
   // Custom comparison function for better performance
   // Only re-render if these specific fields change
-  // Note: imageError is internal state and doesn't affect this comparison
+  const prev = prevProps.item;
+  const next = nextProps.item;
+  
   return (
-    prevProps.item.token_address === nextProps.item.token_address &&
-    prevProps.item.price_usd === nextProps.item.price_usd &&
-    prevProps.item.market_cap_usd === nextProps.item.market_cap_usd &&
-    prevProps.item.price_change_percent?.h24 === nextProps.item.price_change_percent?.h24 &&
-    prevProps.item.token_symbol === nextProps.item.token_symbol &&
-    prevProps.item.token_icon === nextProps.item.token_icon
+    prev.token_address === next.token_address &&
+    prev.price_usd === next.price_usd &&
+    prev.market_cap_usd === next.market_cap_usd &&
+    prev.price_change_percent?.h24 === next.price_change_percent?.h24 &&
+    prev.token_symbol === next.token_symbol &&
+    prev.token_icon === next.token_icon
   );
 });
 
@@ -60,7 +100,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#fff',
+    backgroundColor: UI_CONFIG.COLORS.SURFACE,
   },
   tokenLeft: {
     flexDirection: 'row',
@@ -78,7 +118,7 @@ const styles = StyleSheet.create({
   },
   tokenPrice: {
     fontSize: 14,
-    color: '#666',
+    color: UI_CONFIG.COLORS.TEXT.SECONDARY,
   },
   tokenRight: {
     alignItems: 'flex-end',

@@ -1,12 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FilterState, Token } from '@/types/token';
+import { FilterState, Token, BooleanFilterKey } from '@/types/token';
 import { filterStorage } from '@/utils/filterStorage';
 
+/**
+ * Hook to manage token list filters with persistent storage
+ * @returns Filter state and control functions
+ */
 export const useFilters = () => {
   const [filters, setFilters] = useState<FilterState>(filterStorage.getDefaultFilters());
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load filters from AsyncStorage on mount
+  /**
+   * Load filters from AsyncStorage on mount
+   */
   useEffect(() => {
     const loadStoredFilters = async () => {
       try {
@@ -15,6 +21,7 @@ export const useFilters = () => {
         setFilters(storedFilters);
       } catch (error) {
         console.error('Failed to load filters:', error);
+        // Continue with default filters on error
       } finally {
         setIsLoading(false);
       }
@@ -23,39 +30,60 @@ export const useFilters = () => {
     loadStoredFilters();
   }, []);
 
-  // Save filters whenever they change
+  /**
+   * Save filters to storage whenever they change
+   */
   useEffect(() => {
     if (!isLoading) {
       filterStorage.saveFilters(filters).catch((error) => {
         console.error('Failed to save filters:', error);
+        // Non-critical error, user can continue
       });
     }
   }, [filters, isLoading]);
 
-  // Toggle boolean filters
-  const toggleFilter = useCallback((filterKey: 'is_new' | 'is_pro' | 'price_above_threshold') => {
+  /**
+   * Toggle boolean filter values
+   */
+  const toggleFilter = useCallback((filterKey: BooleanFilterKey) => {
     setFilters((prev) => ({
       ...prev,
       [filterKey]: !prev[filterKey],
     }));
   }, []);
 
-  // Update price threshold
+  /**
+   * Update the price threshold value
+   */
   const updatePriceThreshold = useCallback((threshold: number) => {
+    // Ensure threshold is non-negative
+    const validThreshold = Math.max(0, threshold);
     setFilters((prev) => ({
       ...prev,
-      price_threshold: threshold,
+      price_threshold: validThreshold,
     }));
   }, []);
 
-  // Reset all filters to default
+  /**
+   * Reset all filters to default values
+   */
   const resetFilters = useCallback(async () => {
     const defaultFilters = filterStorage.getDefaultFilters();
     setFilters(defaultFilters);
-    await filterStorage.clearFilters();
+    
+    try {
+      await filterStorage.clearFilters();
+    } catch (error) {
+      console.error('Failed to clear stored filters:', error);
+      // Filter state is already reset locally
+    }
   }, []);
 
-  // Apply filters to token list
+  /**
+   * Apply active filters to a token list
+   * @param tokens - Array of tokens to filter
+   * @returns Filtered array of tokens
+   */
   const applyFilters = useCallback((tokens: Token[]): Token[] => {
     return tokens.filter((token) => {
       // Skip tokens with null prices to avoid errors
@@ -82,13 +110,18 @@ export const useFilters = () => {
     });
   }, [filters]);
 
-  // Get active filter count
+  /**
+   * Get the number of active filters
+   * @returns Count of filters that are currently active
+   */
   const activeFilterCount = useCallback(() => {
-    let count = 0;
-    if (filters.is_new) count++;
-    if (filters.is_pro) count++;
-    if (filters.price_above_threshold) count++;
-    return count;
+    const activeFilters = [
+      filters.is_new,
+      filters.is_pro,
+      filters.price_above_threshold,
+    ];
+    
+    return activeFilters.filter(Boolean).length;
   }, [filters]);
 
   return {

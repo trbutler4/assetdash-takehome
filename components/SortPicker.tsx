@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,37 +8,55 @@ import {
   FlatList,
   SafeAreaView,
   Animated,
+  ListRenderItem,
 } from 'react-native';
-import { SortOption } from '@/types/token';
-import { sortOptions } from '@/utils/sorting';
+import { SortOption, SortOptionConfig } from '@/types/token';
+import { sortOptions, getSortOptionLabel } from '@/utils/sorting';
+import { UI_CONFIG } from '@/constants/app';
 
 interface SortPickerProps {
   currentSort: SortOption;
   onSortChange: (sort: SortOption) => void;
 }
 
+/**
+ * Animation configuration
+ */
+const ANIMATION_CONFIG = {
+  OVERLAY_DURATION: 200,
+  CONTENT_DURATION: 250,
+  INITIAL_TRANSLATE_Y: 300,
+} as const;
+
+/**
+ * Sort picker component with animated modal
+ * Allows users to select how the token list should be sorted
+ */
 export const SortPicker: React.FC<SortPickerProps> = ({
   currentSort,
   onSortChange,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
-  const contentTranslateY = useRef(new Animated.Value(300)).current;
+  const contentTranslateY = useRef(new Animated.Value(ANIMATION_CONFIG.INITIAL_TRANSLATE_Y)).current;
 
-  const currentSortLabel = sortOptions.find(opt => opt.value === currentSort)?.label || 'Sort';
+  const currentSortLabel = useMemo(() => getSortOptionLabel(currentSort), [currentSort]);
 
+  /**
+   * Animate modal visibility changes
+   */
   useEffect(() => {
     if (modalVisible) {
       // Animate in
       Animated.parallel([
         Animated.timing(overlayOpacity, {
           toValue: 1,
-          duration: 200,
+          duration: ANIMATION_CONFIG.OVERLAY_DURATION,
           useNativeDriver: true,
         }),
         Animated.timing(contentTranslateY, {
           toValue: 0,
-          duration: 250,
+          duration: ANIMATION_CONFIG.CONTENT_DURATION,
           useNativeDriver: true,
         }),
       ]).start();
@@ -47,28 +65,79 @@ export const SortPicker: React.FC<SortPickerProps> = ({
       Animated.parallel([
         Animated.timing(overlayOpacity, {
           toValue: 0,
-          duration: 200,
+          duration: ANIMATION_CONFIG.OVERLAY_DURATION,
           useNativeDriver: true,
         }),
         Animated.timing(contentTranslateY, {
-          toValue: 300,
-          duration: 250,
+          toValue: ANIMATION_CONFIG.INITIAL_TRANSLATE_Y,
+          duration: ANIMATION_CONFIG.CONTENT_DURATION,
           useNativeDriver: true,
         }),
       ]).start();
     }
-  }, [modalVisible]);
+  }, [modalVisible, overlayOpacity, contentTranslateY]);
 
-  const handleSortSelect = (sortOption: SortOption) => {
+  /**
+   * Handle sort option selection
+   */
+  const handleSortSelect = useCallback((sortOption: SortOption) => {
     onSortChange(sortOption);
     setModalVisible(false);
-  };
+  }, [onSortChange]);
+
+  /**
+   * Toggle modal visibility
+   */
+  const toggleModal = useCallback(() => {
+    setModalVisible(prev => !prev);
+  }, []);
+
+  /**
+   * Close the modal
+   */
+  const closeModal = useCallback(() => {
+    setModalVisible(false);
+  }, []);
+
+  /**
+   * Render individual sort option
+   */
+  const renderSortOption: ListRenderItem<SortOptionConfig> = useCallback(({ item }) => {
+    const isActive = currentSort === item.value;
+    
+    return (
+      <TouchableOpacity
+        style={[
+          styles.sortOption,
+          isActive && styles.sortOptionActive,
+        ]}
+        onPress={() => handleSortSelect(item.value)}
+      >
+        <Text
+          style={[
+            styles.sortOptionText,
+            isActive && styles.sortOptionTextActive,
+          ]}
+        >
+          {item.label}
+        </Text>
+        {isActive && (
+          <Text style={styles.checkmark}>✓</Text>
+        )}
+      </TouchableOpacity>
+    );
+  }, [currentSort, handleSortSelect]);
+
+  /**
+   * Render separator between options
+   */
+  const renderSeparator = useCallback(() => <View style={styles.separator} />, []);
 
   return (
     <>
       <TouchableOpacity
         style={styles.sortButton}
-        onPress={() => setModalVisible(true)}
+        onPress={toggleModal}
       >
         <Text style={styles.sortButtonText}>Sort: {currentSortLabel}</Text>
         <Text style={styles.sortButtonIcon}>▼</Text>
@@ -78,7 +147,7 @@ export const SortPicker: React.FC<SortPickerProps> = ({
         animationType="none"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={closeModal}
       >
         <Animated.View 
           style={[
@@ -91,7 +160,7 @@ export const SortPicker: React.FC<SortPickerProps> = ({
           <TouchableOpacity
             style={StyleSheet.absoluteFillObject}
             activeOpacity={1}
-            onPress={() => setModalVisible(false)}
+            onPress={closeModal}
           />
           <Animated.View 
             style={[
@@ -105,7 +174,7 @@ export const SortPicker: React.FC<SortPickerProps> = ({
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Sort By</Text>
               <TouchableOpacity
-                onPress={() => setModalVisible(false)}
+                onPress={closeModal}
                 style={styles.closeButton}
               >
                 <Text style={styles.closeButtonText}>✕</Text>
@@ -115,28 +184,9 @@ export const SortPicker: React.FC<SortPickerProps> = ({
             <FlatList
               data={sortOptions}
               keyExtractor={(item) => item.value}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.sortOption,
-                    currentSort === item.value && styles.sortOptionActive,
-                  ]}
-                  onPress={() => handleSortSelect(item.value)}
-                >
-                  <Text
-                    style={[
-                      styles.sortOptionText,
-                      currentSort === item.value && styles.sortOptionTextActive,
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                  {currentSort === item.value && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
-                </TouchableOpacity>
-              )}
-              ItemSeparatorComponent={() => <View style={styles.separator} />}
+              renderItem={renderSortOption}
+              ItemSeparatorComponent={renderSeparator}
+              bounces={false}
             />
             </SafeAreaView>
           </Animated.View>
@@ -152,7 +202,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: UI_CONFIG.COLORS.BACKGROUND,
     borderRadius: 20,
     marginHorizontal: 16,
     marginVertical: 8,
@@ -164,7 +214,7 @@ const styles = StyleSheet.create({
   },
   sortButtonIcon: {
     fontSize: 10,
-    color: '#666',
+    color: UI_CONFIG.COLORS.TEXT.SECONDARY,
   },
   modalOverlay: {
     flex: 1,
@@ -172,7 +222,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: UI_CONFIG.COLORS.SURFACE,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '70%',
@@ -188,7 +238,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: UI_CONFIG.COLORS.BORDER,
   },
   modalTitle: {
     fontSize: 18,
@@ -199,7 +249,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontSize: 20,
-    color: '#666',
+    color: UI_CONFIG.COLORS.TEXT.SECONDARY,
   },
   sortOption: {
     flexDirection: 'row',
@@ -209,24 +259,24 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   sortOptionActive: {
-    backgroundColor: '#F0F8FF',
+    backgroundColor: `${UI_CONFIG.COLORS.PRIMARY}10`, // 10% opacity
   },
   sortOptionText: {
     fontSize: 16,
-    color: '#333',
+    color: UI_CONFIG.COLORS.TEXT.PRIMARY,
   },
   sortOptionTextActive: {
-    color: '#007AFF',
+    color: UI_CONFIG.COLORS.PRIMARY,
     fontWeight: '500',
   },
   checkmark: {
     fontSize: 18,
-    color: '#007AFF',
+    color: UI_CONFIG.COLORS.PRIMARY,
     fontWeight: '600',
   },
   separator: {
     height: 1,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: UI_CONFIG.COLORS.BACKGROUND,
     marginHorizontal: 20,
   },
 });

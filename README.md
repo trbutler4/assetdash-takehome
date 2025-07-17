@@ -51,7 +51,7 @@ bun run web
 ## Features Implemented
 
 1. **Token List Display**: Fetches and displays crypto tokens from the API endpoint
-2. **Real-time Price Updates**: Automatically updates 3-8 random token prices every 10 seconds with realistic market movements
+2. **Real-time Price Updates**: Automatically updates 150-200 random token prices every 10 seconds with realistic market movements
 3. **Filtering Options**:
    - New tokens only
    - Pro tokens only
@@ -139,7 +139,6 @@ bun run start --clear
 - `bun run ios` - Start iOS simulator and development server
 - `bun run web` - Start web development server (limited functionality)
 - `bun run lint` - Run ESLint checks
-- `bun run reset-project` - Reset project to initial state
 
 ## Notes
 

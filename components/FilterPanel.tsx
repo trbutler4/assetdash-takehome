@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,16 +9,46 @@ import {
   ScrollView,
   Keyboard,
 } from 'react-native';
-import { FilterState } from '@/types/token';
+import { FilterState, BooleanFilterKey } from '@/types/token';
+import { UI_CONFIG } from '@/constants/app';
 
 interface FilterPanelProps {
   filters: FilterState;
-  onToggleFilter: (filterKey: 'is_new' | 'is_pro' | 'price_above_threshold') => void;
+  onToggleFilter: (filterKey: BooleanFilterKey) => void;
   onUpdatePriceThreshold: (threshold: number) => void;
   onResetFilters: () => void;
   activeFilterCount: number;
 }
 
+/**
+ * Filter configuration for UI display
+ */
+interface FilterConfig {
+  key: BooleanFilterKey;
+  label: string;
+  description: string;
+}
+
+/**
+ * Available filter configurations
+ */
+const FILTER_CONFIGS: FilterConfig[] = [
+  {
+    key: 'is_new',
+    label: 'New Tokens',
+    description: 'Show only newly created tokens',
+  },
+  {
+    key: 'is_pro',
+    label: 'Pro Tokens',
+    description: 'Show only verified pro tokens',
+  },
+];
+
+/**
+ * Filter panel component for managing token list filters
+ * Displays toggleable filters and price threshold input
+ */
 export const FilterPanel: React.FC<FilterPanelProps> = ({
   filters,
   onToggleFilter,
@@ -36,7 +66,10 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     }
   }, [filters.price_threshold, isInputFocused]);
 
-  const handlePriceThresholdChange = (text: string) => {
+  /**
+   * Handle price threshold input changes
+   */
+  const handlePriceThresholdChange = useCallback((text: string) => {
     // Allow typing decimal points and numbers
     setPriceInputValue(text);
     
@@ -45,13 +78,19 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     if (!isNaN(value) && value >= 0) {
       onUpdatePriceThreshold(value);
     }
-  };
+  }, [onUpdatePriceThreshold]);
 
-  const handlePriceThresholdFocus = () => {
+  /**
+   * Handle price input focus
+   */
+  const handlePriceThresholdFocus = useCallback(() => {
     setIsInputFocused(true);
-  };
+  }, []);
 
-  const handlePriceThresholdBlur = () => {
+  /**
+   * Handle price input blur - validate and update final value
+   */
+  const handlePriceThresholdBlur = useCallback(() => {
     setIsInputFocused(false);
     // On blur, ensure we have a valid number
     const value = parseFloat(priceInputValue);
@@ -61,7 +100,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       // Update the filter with the final value
       onUpdatePriceThreshold(value);
     }
-  };
+  }, [priceInputValue, filters.price_threshold, onUpdatePriceThreshold]);
 
   return (
     <View style={styles.container}>
@@ -75,33 +114,21 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       </View>
 
       <ScrollView style={styles.filterList}>
-        {/* New Tokens Filter */}
-        <View style={styles.filterItem}>
-          <View style={styles.filterInfo}>
-            <Text style={styles.filterLabel}>New Tokens</Text>
-            <Text style={styles.filterDescription}>Show only newly created tokens</Text>
+        {/* Render configured filters */}
+        {FILTER_CONFIGS.map((config) => (
+          <View key={config.key} style={styles.filterItem}>
+            <View style={styles.filterInfo}>
+              <Text style={styles.filterLabel}>{config.label}</Text>
+              <Text style={styles.filterDescription}>{config.description}</Text>
+            </View>
+            <Switch
+              value={filters[config.key]}
+              onValueChange={() => onToggleFilter(config.key)}
+              trackColor={{ false: UI_CONFIG.COLORS.BORDER, true: UI_CONFIG.COLORS.POSITIVE }}
+              thumbColor={filters[config.key] ? UI_CONFIG.COLORS.SURFACE : '#f4f3f4'}
+            />
           </View>
-          <Switch
-            value={filters.is_new}
-            onValueChange={() => onToggleFilter('is_new')}
-            trackColor={{ false: '#E0E0E0', true: '#4CAF50' }}
-            thumbColor={filters.is_new ? '#fff' : '#f4f3f4'}
-          />
-        </View>
-
-        {/* Pro Tokens Filter */}
-        <View style={styles.filterItem}>
-          <View style={styles.filterInfo}>
-            <Text style={styles.filterLabel}>Pro Tokens</Text>
-            <Text style={styles.filterDescription}>Show only verified pro tokens</Text>
-          </View>
-          <Switch
-            value={filters.is_pro}
-            onValueChange={() => onToggleFilter('is_pro')}
-            trackColor={{ false: '#E0E0E0', true: '#4CAF50' }}
-            thumbColor={filters.is_pro ? '#fff' : '#f4f3f4'}
-          />
-        </View>
+        ))}
 
         {/* Price Threshold Filter */}
         <View style={styles.filterItem}>
@@ -114,8 +141,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           <Switch
             value={filters.price_above_threshold}
             onValueChange={() => onToggleFilter('price_above_threshold')}
-            trackColor={{ false: '#E0E0E0', true: '#4CAF50' }}
-            thumbColor={filters.price_above_threshold ? '#fff' : '#f4f3f4'}
+            trackColor={{ false: UI_CONFIG.COLORS.BORDER, true: UI_CONFIG.COLORS.POSITIVE }}
+            thumbColor={filters.price_above_threshold ? UI_CONFIG.COLORS.SURFACE : '#f4f3f4'}
           />
         </View>
 
@@ -151,9 +178,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: UI_CONFIG.COLORS.SURFACE,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: UI_CONFIG.COLORS.BORDER,
     maxHeight: 300,
   },
   header: {
@@ -177,7 +204,7 @@ const styles = StyleSheet.create({
   },
   resetButtonText: {
     fontSize: 14,
-    color: '#007AFF',
+    color: UI_CONFIG.COLORS.PRIMARY,
     fontWeight: '500',
   },
   filterList: {
@@ -201,7 +228,7 @@ const styles = StyleSheet.create({
   },
   filterDescription: {
     fontSize: 14,
-    color: '#666',
+    color: UI_CONFIG.COLORS.TEXT.SECONDARY,
   },
   thresholdInputContainer: {
     paddingHorizontal: 16,
@@ -210,7 +237,7 @@ const styles = StyleSheet.create({
   },
   thresholdInputLabel: {
     fontSize: 14,
-    color: '#666',
+    color: UI_CONFIG.COLORS.TEXT.SECONDARY,
     marginBottom: 8,
   },
   thresholdInputRow: {
@@ -219,9 +246,9 @@ const styles = StyleSheet.create({
   },
   thresholdInput: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: UI_CONFIG.COLORS.SURFACE,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: UI_CONFIG.COLORS.BORDER,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -229,13 +256,13 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   doneButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: UI_CONFIG.COLORS.PRIMARY,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
   doneButtonText: {
-    color: '#fff',
+    color: UI_CONFIG.COLORS.SURFACE,
     fontSize: 16,
     fontWeight: '600',
   },
