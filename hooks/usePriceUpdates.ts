@@ -16,28 +16,45 @@ export const usePriceUpdates = (initialTokens: Token[]) => {
    */
   const generateRandomPriceChange = useCallback(() => {
     // Generate a random price change between -MAX% and +MAX%
-    return (Math.random() - 0.5) * 2 * PRICE_UPDATE_CONFIG.MAX_PRICE_CHANGE_PERCENT;
+    return (
+      (Math.random() - 0.5) * 2 * PRICE_UPDATE_CONFIG.MAX_PRICE_CHANGE_PERCENT
+    );
   }, []);
 
   /**
    * Updates price change percentages with time decay
+   *
+   * NOTE: this can be simplified to only the 24 hour timeframe
    */
   const updatePriceChangePercent = useCallback(
-    (currentPercent: TimeSeriesData | null, priceChangePercent: number): TimeSeriesData | null => {
+    (
+      currentPercent: TimeSeriesData | null,
+      priceChangePercent: number,
+    ): TimeSeriesData | null => {
       if (!currentPercent) return currentPercent;
-      
+
       const { TIME_DECAY_FACTORS } = PRICE_UPDATE_CONFIG;
-      
+
       return {
         m5: priceChangePercent * 100,
-        m30: (currentPercent.m30 ?? 0) * TIME_DECAY_FACTORS.M30 + priceChangePercent * 10,
-        h1: (currentPercent.h1 ?? 0) * TIME_DECAY_FACTORS.H1 + priceChangePercent * 5,
-        h4: (currentPercent.h4 ?? 0) * TIME_DECAY_FACTORS.H4 + priceChangePercent * 2,
-        h8: (currentPercent.h8 ?? 0) * TIME_DECAY_FACTORS.H8 + priceChangePercent * 1,
-        h24: (currentPercent.h24 ?? 0) * TIME_DECAY_FACTORS.H24 + priceChangePercent * 0.5,
+        m30:
+          (currentPercent.m30 ?? 0) * TIME_DECAY_FACTORS.M30 +
+          priceChangePercent * 10,
+        h1:
+          (currentPercent.h1 ?? 0) * TIME_DECAY_FACTORS.H1 +
+          priceChangePercent * 5,
+        h4:
+          (currentPercent.h4 ?? 0) * TIME_DECAY_FACTORS.H4 +
+          priceChangePercent * 2,
+        h8:
+          (currentPercent.h8 ?? 0) * TIME_DECAY_FACTORS.H8 +
+          priceChangePercent * 1,
+        h24:
+          (currentPercent.h24 ?? 0) * TIME_DECAY_FACTORS.H24 +
+          priceChangePercent * 0.5,
       };
     },
-    []
+    [],
   );
 
   /**
@@ -46,10 +63,12 @@ export const usePriceUpdates = (initialTokens: Token[]) => {
   const updateVolume = useCallback(
     (currentVolume: TimeSeriesData | null): TimeSeriesData | null => {
       if (!currentVolume) return currentVolume;
-      
+
       const { VOLUME_MULTIPLIER } = PRICE_UPDATE_CONFIG;
-      const baseMultiplier = VOLUME_MULTIPLIER.MIN + Math.random() * (VOLUME_MULTIPLIER.MAX - VOLUME_MULTIPLIER.MIN);
-      
+      const baseMultiplier =
+        VOLUME_MULTIPLIER.MIN +
+        Math.random() * (VOLUME_MULTIPLIER.MAX - VOLUME_MULTIPLIER.MIN);
+
       return {
         m5: (currentVolume.m5 ?? 0) * baseMultiplier,
         m30: (currentVolume.m30 ?? 0) * (0.9 + Math.random() * 0.2),
@@ -59,7 +78,7 @@ export const usePriceUpdates = (initialTokens: Token[]) => {
         h24: (currentVolume.h24 ?? 0) * (0.995 + Math.random() * 0.01),
       };
     },
-    []
+    [],
   );
 
   /**
@@ -74,41 +93,50 @@ export const usePriceUpdates = (initialTokens: Token[]) => {
 
       const priceChangePercent = generateRandomPriceChange();
       const newPrice = token.price_usd * (1 + priceChangePercent);
-      const newMarketCap = token.total_supply != null
-        ? newPrice * token.total_supply
-        : token.market_cap_usd;
+      const newMarketCap =
+        token.total_supply != null
+          ? newPrice * token.total_supply
+          : token.market_cap_usd;
 
       return {
         ...token,
         price_usd: newPrice,
         market_cap_usd: newMarketCap,
-        price_change_percent: updatePriceChangePercent(token.price_change_percent, priceChangePercent),
+        price_change_percent: updatePriceChangePercent(
+          token.price_change_percent,
+          priceChangePercent,
+        ),
         volume_usd: updateVolume(token.volume_usd),
       };
     },
-    [generateRandomPriceChange, updatePriceChangePercent, updateVolume]
+    [generateRandomPriceChange, updatePriceChangePercent, updateVolume],
   );
 
   /**
    * Gets random indices for tokens to update
    */
-  const getRandomIndicesToUpdate = useCallback((tokenCount: number): Set<number> => {
-    const { MIN_TOKENS_TO_UPDATE, MAX_TOKENS_TO_UPDATE } = PRICE_UPDATE_CONFIG;
-    
-    const tokensToUpdateCount = Math.min(
-      Math.floor(
-        Math.random() * (MAX_TOKENS_TO_UPDATE - MIN_TOKENS_TO_UPDATE + 1) + MIN_TOKENS_TO_UPDATE
-      ),
-      tokenCount
-    );
+  const getRandomIndicesToUpdate = useCallback(
+    (tokenCount: number): Set<number> => {
+      const { MIN_TOKENS_TO_UPDATE, MAX_TOKENS_TO_UPDATE } =
+        PRICE_UPDATE_CONFIG;
 
-    const indices = new Set<number>();
-    while (indices.size < tokensToUpdateCount) {
-      indices.add(Math.floor(Math.random() * tokenCount));
-    }
-    
-    return indices;
-  }, []);
+      const tokensToUpdateCount = Math.min(
+        Math.floor(
+          Math.random() * (MAX_TOKENS_TO_UPDATE - MIN_TOKENS_TO_UPDATE + 1) +
+            MIN_TOKENS_TO_UPDATE,
+        ),
+        tokenCount,
+      );
+
+      const indices = new Set<number>();
+      while (indices.size < tokensToUpdateCount) {
+        indices.add(Math.floor(Math.random() * tokenCount));
+      }
+
+      return indices;
+    },
+    [],
+  );
 
   /**
    * Updates a random selection of tokens with new prices
@@ -118,7 +146,7 @@ export const usePriceUpdates = (initialTokens: Token[]) => {
       if (tokens.length === 0) return tokens;
 
       const indicesToUpdate = getRandomIndicesToUpdate(tokens.length);
-      
+
       // Only create new array if we have tokens to update
       if (indicesToUpdate.size === 0) return tokens;
 
@@ -130,7 +158,7 @@ export const usePriceUpdates = (initialTokens: Token[]) => {
         return token; // Keep reference to unchanged token
       });
     },
-    [getRandomIndicesToUpdate, updateTokenPrice]
+    [getRandomIndicesToUpdate, updateTokenPrice],
   );
 
   // Initialize tokens when they change
@@ -159,7 +187,10 @@ export const usePriceUpdates = (initialTokens: Token[]) => {
       };
 
       // Start the interval
-      intervalRef.current = setInterval(updatePrices, PRICE_UPDATE_CONFIG.INTERVAL_MS);
+      intervalRef.current = setInterval(
+        updatePrices,
+        PRICE_UPDATE_CONFIG.INTERVAL_MS,
+      );
     }
 
     // Cleanup function
